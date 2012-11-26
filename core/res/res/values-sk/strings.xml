@@ -1250,4 +1250,71 @@
     <!-- label for item that opens the profile choosing dialog -->
     <string name="global_action_choose_profile">Profil</string>
 
+    <!-- Lock screen Weather - Weather codes -->
+    <string name="weather_0">Tornádo</string>
+    <string name="weather_1">Tropická búrka</string>
+    <string name="weather_2">Hurikán</string>
+    <string name="weather_3">Silné búrky</string>
+    <string name="weather_4">Búrky</string>
+    <string name="weather_5">Dážď so snehom</string>
+    <string name="weather_6">Dážď a pľušť</string>
+    <string name="weather_7">Sneh a pľušť</string>
+    <string name="weather_8">Mrznúce mrholenie</string>
+    <string name="weather_9">Mrholenie</string>
+    <string name="weather_10">Mrznúci dážď</string>
+    <string name="weather_11">Prehánky</string>
+    <string name="weather_12">Prehánky</string>
+    <string name="weather_13">Snehové prehánky</string>
+    <string name="weather_14">Slabé snehové prehánky</string>
+    <string name="weather_15">Silné sneženie</string>
+    <string name="weather_16">Sneženie</string>
+    <string name="weather_17">Krúpy</string>
+    <string name="weather_18">Pľušť</string>
+    <string name="weather_19">Prašná búrka</string>
+    <string name="weather_20">Hmlisto</string>
+    <string name="weather_21">Opar</string>
+    <string name="weather_22">Hmlisto</string>
+    <string name="weather_23">Búrlivý vietor</string>
+    <string name="weather_24">Veterno</string>
+    <string name="weather_25">Chladno</string>
+    <string name="weather_26">Oblačno</string>
+    <string name="weather_27">Prevažne oblačno</string> <!-- Night -->
+    <string name="weather_28">Prevažne oblačno</string> <!-- Day -->
+    <string name="weather_29">Polooblačno</string> <!-- Night -->
+    <string name="weather_30">Polooblačno</string> <!-- Day -->
+    <string name="weather_31">Jasno</string> <!-- Night -->
+    <string name="weather_32">Slnečno</string>
+    <string name="weather_33">Pekne</string> <!-- Night -->
+    <string name="weather_34">Pekne</string> <!-- Day -->
+    <string name="weather_35">Dážď s krúpami</string>
+    <string name="weather_36">Horúco</string>
+    <string name="weather_37">Lokálne búrky</string>
+    <string name="weather_38">Búrky</string>
+    <string name="weather_39">Búrky</string>
+    <string name="weather_40">Prehánky</string>
+    <string name="weather_41">Silné sneženie</string>
+    <string name="weather_42">Snehové prehánky</string>
+    <string name="weather_43">Silné sneženie</string>
+    <string name="weather_44">Polooblačno</string>
+    <string name="weather_45">Búrky</string>
+    <string name="weather_46">Snehové búrky</string>
+    <string name="weather_47">Lokálne búrky</string>
+    <!-- Forecast unavailable -->
+    <string name="weather_3200"></string>
+
+    <!-- Lock screen Weather - Wind directions -->
+    <string name="weather_N">S</string>
+    <string name="weather_NE">SV</string>
+    <string name="weather_E">V</string>
+    <string name="weather_SE">JV</string>
+    <string name="weather_S">J</string>
+    <string name="weather_SW">JZ</string>
+    <string name="weather_W">Z</string>
+    <string name="weather_NW">SZ</string>
+
+    <!-- Lock screen Weather - error messages -->
+    <string name="weather_no_data">Bez údajov</string>
+    <string name="weather_tap_to_refresh">Stlač pre obnovenie</string>
+    <string name="weather_refreshing">Obnovovanie</string>
+
 </resources>
