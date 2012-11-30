@@ -1284,8 +1284,8 @@
     <string name="weather_30">Polooblačno</string> <!-- Day -->
     <string name="weather_31">Jasno</string> <!-- Night -->
     <string name="weather_32">Slnečno</string>
-    <string name="weather_33">Pekne</string> <!-- Night -->
-    <string name="weather_34">Pekne</string> <!-- Day -->
+    <string name="weather_33">Polojasno</string> <!-- Night -->
+    <string name="weather_34">Polojasno</string> <!-- Day -->
     <string name="weather_35">Dážď s krúpami</string>
     <string name="weather_36">Horúco</string>
     <string name="weather_37">Lokálne búrky</string>
