@@ -32,6 +32,9 @@ public class TwoGToggle extends Toggle {
 
     private int mNetworkMode = -1;
 
+    public static final String ACTION_MODIFY_NETWORK_MODE = "com.android.internal.telephony.MODIFY_NETWORK_MODE";
+    public static final String EXTRA_NETWORK_MODE = "networkMode";
+
     public TwoGToggle(Context c) {
         super(c);
 
@@ -43,8 +46,12 @@ public class TwoGToggle extends Toggle {
 
     @Override
     public void onCheckChanged(boolean checked) {
-        int networkType = checked ? Phone.NT_MODE_WCDMA_PREF : Phone.NT_MODE_GSM_ONLY;
+        int networkType = checked ? Phone.NT_MODE_GSM_ONLY : Phone.NT_MODE_WCDMA_PREF;
         Settings.Secure.putInt(mContext.getContentResolver(), Settings.Secure.PREFERRED_NETWORK_MODE, networkType);
+
+        Intent intent = new Intent(ACTION_MODIFY_NETWORK_MODE);
+        intent.putExtra(EXTRA_NETWORK_MODE, networkType);
+        mContext.sendBroadcast(intent);
     }
 
     class SettingsObserver extends ContentObserver {
