@@ -3084,7 +3084,11 @@ public final class Settings {
          public static final String VOLUME_KEY_CURSOR_CONTROL = "volume_key_cursor_control";
 
         /**
-         * Show the pending notification counts as overlays on the status bar
+          * Whether rotate switch in status bar should be enabled for layouts < 600dp
+          * @hide
+          */
+        public static final String ROTATE_SWITCH_IN_PHONE_MODE = "rotate_switch_in_phone_mode";
+
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
