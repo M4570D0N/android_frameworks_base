@@ -385,6 +385,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     boolean mCanHideNavigationBar = false;
     boolean mNavigationBarCanMove = false; // can the navigation bar ever move to the side?
     boolean mNavigationBarOnBottom = true; // is the navigation bar on the bottom *right now*?
+    boolean mTabletStatusBarOnTop = false; // is the tablet status bar on the top?
     int[] mNavigationBarHeightForRotation = new int[4];
     int[] mNavigationBarWidthForRotation = new int[4];
 
@@ -1331,6 +1332,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             // 720dp: "tablet" UI with a single combined status & navigation bar
             mHasSystemNavBar = true;
             mNavigationBarCanMove = false;
+            mTabletStatusBarOnTop = (Settings.System.getInt(mContext.getContentResolver(),
+                                        Settings.System.STATUS_BAR_TABLET_TOP, 0) == 1);
         }
 
         mHasNavigationBar = !mHasSystemNavBar;
@@ -2064,7 +2067,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     public int selectAnimationLw(WindowState win, int transit) {
         if (PRINT_ANIM) Log.i(TAG, "selectAnimation in " + win
               + ": transit=" + transit);
-        if (win == mStatusBar) {
+        if (win == mStatusBar || (win == mNavigationBar && mTabletStatusBarOnTop)) {
             if (transit == TRANSIT_EXIT || transit == TRANSIT_HIDE) {
                 return R.anim.dock_top_exit;
             } else if (transit == TRANSIT_ENTER || transit == TRANSIT_SHOW) {
@@ -2877,37 +2880,55 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             // size.  We need to do this directly, instead of relying on
             // it to bubble up from the nav bar, because this needs to
             // change atomically with screen rotations.
-            mNavigationBarOnBottom = (!mNavigationBarCanMove || displayWidth < displayHeight);
-            if (mNavigationBarOnBottom) {
-                // It's a system nav bar or a portrait screen; nav bar goes on bottom.
-                int top = displayHeight - mNavigationBarHeightForRotation[displayRotation];
-                if (mHdmiPlugged) {
-                    // Move the nav bar up if the external display is the same aspect ratio
-                    // but shorter.  This avoids clipping on the external display.
-                    boolean sameAspect = mExternalDisplayHeight > 0 && displayHeight > 0
-                        && ((float) mExternalDisplayWidth / mExternalDisplayHeight > 1)
-                        == ((float) displayWidth / displayHeight > 1);
-                    if (sameAspect && top > mExternalDisplayHeight) {
-                        top = mExternalDisplayHeight;
+            if (mHasSystemNavBar || displayWidth < displayHeight) {
+                // It's a tablet status bar on top
+                if(mHasSystemNavBar && mTabletStatusBarOnTop) {
+                    mNavigationBarOnBottom = false;
+                    int top = 0;
+                    int height = mNavigationBarHeightForRotation[displayRotation];
+                    mTmpNavigationFrame.set(0, top, displayWidth, height);
+                    mStableTop = mUnrestrictedScreenTop + height;
+                    if (navVisible) {
+                        mNavigationBar.showLw(true);
+                        mDockTop = mUnrestrictedScreenTop + height;
+                    } else {
+                        mNavigationBar.hideLw(true);
+                    }
+                    if (navVisible && !mNavigationBar.isAnimatingLw()) {
+                        mSystemTop = mUnrestrictedScreenTop + height;
+                    }
+                // It's a tablet status bar on bottom or navigation bar
+                } else {
+                    mNavigationBarOnBottom = true;
+                    int top = displayHeight - mNavigationBarHeightForRotation[displayRotation];
+                    if (mHdmiPlugged) {
+                        // Move the nav bar up if the external display is the same aspect ratio
+                        // but shorter.  This avoids clipping on the external display.
+                        boolean sameAspect = mExternalDisplayHeight > 0 && displayHeight > 0
+                            && ((float) mExternalDisplayWidth / mExternalDisplayHeight > 1)
+                            == ((float) displayWidth / displayHeight > 1);
+                        if (sameAspect && top > mExternalDisplayHeight) {
+                            top = mExternalDisplayHeight;
+                        }
+                    }
+                    mTmpNavigationFrame.set(0, top, displayWidth, displayHeight);
+                    mStableBottom = mStableFullscreenBottom = mTmpNavigationFrame.top;
+                    if (navVisible) {
+                        mNavigationBar.showLw(true);
+                        mDockBottom = mTmpNavigationFrame.top;
+                        mRestrictedScreenHeight = mDockBottom - mDockTop;
+                    } else {
+                        // We currently want to hide the navigation UI.
+                        mNavigationBar.hideLw(true);
+                    }
+                    if (navVisible && !mNavigationBar.isAnimatingLw()) {
+                        // If the nav bar is currently requested to be visible,
+                        // and not in the process of animating on or off, then
+                        // we can tell the app that it is covered by it.
+                        mSystemBottom = mTmpNavigationFrame.top;
                     }
                 }
-                mTmpNavigationFrame.set(0, top, displayWidth, displayHeight);
-                mStableBottom = mStableFullscreenBottom = mTmpNavigationFrame.top;
-                if (navVisible) {
-                    mNavigationBar.showLw(true);
-                    mDockBottom = mTmpNavigationFrame.top;
-                    mRestrictedScreenHeight = mDockBottom - mDockTop;
-                } else {
-                    // We currently want to hide the navigation UI.
-                    mNavigationBar.hideLw(true);
-                }
-                if (navVisible && !mNavigationBar.isAnimatingLw()) {
-                    // If the nav bar is currently requested to be visible,
-                    // and not in the process of animating on or off, then
-                    // we can tell the app that it is covered by it.
-                    mSystemBottom = mTmpNavigationFrame.top;
-                }
-            } else {
+            } else if (!mHasSystemNavBar && displayWidth > displayHeight) {
                 // Landscape screen; nav bar goes to the right.
                 int left = displayWidth - mNavigationBarWidthForRotation[displayRotation];
                 if (mHdmiPlugged) {

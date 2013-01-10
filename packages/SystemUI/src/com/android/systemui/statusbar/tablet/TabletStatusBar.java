@@ -138,6 +138,7 @@ public class TabletStatusBar extends BaseStatusBar implements
     int mNavIconWidth = -1;
     int mMenuNavIconWidth = -1;
     private int mMaxNotificationIcons = 5;
+    int mGravity = Gravity.BOTTOM;
 
     IWindowManager mWindowManager;
 
@@ -309,7 +310,8 @@ public class TabletStatusBar extends BaseStatusBar implements
 
         // Notification Panel
         mNotificationPanel = (NotificationPanel)View.inflate(context,
-                R.layout.system_bar_notification_panel, null);
+                (isOnTop()) ? R.layout.system_bar_notification_panel_top : R.layout.system_bar_notification_panel,
+                 null);
         mNotificationPanel.setBar(this);
         mNotificationPanel.show(false, false);
         mNotificationPanel.setOnTouchListener(
@@ -371,7 +373,7 @@ public class TabletStatusBar extends BaseStatusBar implements
                     | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
                     | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT);
-        lp.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+        lp.gravity = mGravity | Gravity.RIGHT;
         lp.setTitle("NotificationPanel");
         lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
                 | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
@@ -406,7 +408,7 @@ public class TabletStatusBar extends BaseStatusBar implements
                     | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
                     | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT);
-        lp.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+        lp.gravity = mGravity | Gravity.RIGHT;
         lp.setTitle("InputMethodsPanel");
         lp.windowAnimations = R.style.Animation_RecentPanel;
 
@@ -429,7 +431,7 @@ public class TabletStatusBar extends BaseStatusBar implements
                     | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
                     | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT);
-        lp.gravity = Gravity.BOTTOM | Gravity.RIGHT;
+        lp.gravity = mGravity | Gravity.RIGHT;
         lp.setTitle("CompatModePanel");
         lp.windowAnimations = android.R.style.Animation_Dialog;
 
@@ -512,6 +514,10 @@ public class TabletStatusBar extends BaseStatusBar implements
         mNaturalBarHeight = res.getDimensionPixelSize(
                 com.android.internal.R.dimen.navigation_bar_height);
 
+        mGravity = (Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.STATUS_BAR_TABLET_TOP, 0) == 1) ?
+                    Gravity.TOP : Gravity.BOTTOM;
+
         int newIconSize = res.getDimensionPixelSize(
             com.android.internal.R.dimen.system_bar_icon_size);
         int newIconHPadding = res.getDimensionPixelSize(
@@ -567,6 +573,10 @@ public class TabletStatusBar extends BaseStatusBar implements
         }
     }
 
+    private boolean isOnTop() {
+        return (mGravity == Gravity.TOP);
+    }
+
     public View getStatusBarView() {
         return mStatusBarView;
     }
@@ -588,7 +598,7 @@ public class TabletStatusBar extends BaseStatusBar implements
         loadResources();
 
         final TabletStatusBarView sb = (TabletStatusBarView)View.inflate(
-                context, R.layout.system_bar, null);
+                context, (isOnTop()) ? R.layout.system_bar_top : R.layout.system_bar, null);
         mStatusBarView = sb;
 
         sb.setHandler(mHandler);
@@ -801,7 +811,7 @@ public class TabletStatusBar extends BaseStatusBar implements
             lp.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
             lp.dimAmount = 0.75f;
         }
-        lp.gravity = Gravity.BOTTOM | Gravity.LEFT;
+        lp.gravity = mGravity | Gravity.LEFT;
         lp.setTitle("RecentsPanel");
         lp.windowAnimations = com.android.internal.R.style.Animation_RecentApplications;
         lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
@@ -826,7 +836,7 @@ public class TabletStatusBar extends BaseStatusBar implements
             lp.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
             lp.dimAmount = 0.7f;
         }
-        lp.gravity = Gravity.BOTTOM | Gravity.LEFT;
+        lp.gravity = mGravity | Gravity.LEFT;
         lp.setTitle("SearchPanel");
         // TODO: Define custom animation for Search panel
         lp.windowAnimations = com.android.internal.R.style.Animation_RecentApplications;
@@ -872,7 +882,7 @@ public class TabletStatusBar extends BaseStatusBar implements
     }
 
     protected int getStatusBarGravity() {
-        return Gravity.BOTTOM | Gravity.FILL_HORIZONTAL;
+        return mGravity | Gravity.FILL_HORIZONTAL;
     }
 
     public void onBarHeightChanged(int height) {
@@ -1493,7 +1503,8 @@ public class TabletStatusBar extends BaseStatusBar implements
                         mVT.addMovement(event);
                         mVT.computeCurrentVelocity(1000); // pixels per second
                         // require a little more oomph once we're already in peekaboo mode
-                        if (mVT.getYVelocity() < -mNotificationFlingVelocity) {
+                        if ( (isOnTop() && mVT.getYVelocity() > mNotificationFlingVelocity) ||
+                             (!isOnTop() && mVT.getYVelocity() < -mNotificationFlingVelocity) ) {
                             animateExpand();
                             visibilityChanged(true);
                             hilite(false);
@@ -1511,7 +1522,7 @@ public class TabletStatusBar extends BaseStatusBar implements
                          && Math.abs(event.getX() - mInitialTouchX) < mTouchSlop
                          && Math.abs(event.getY() - mInitialTouchY) < (mTouchSlop / 3)
                          // dragging off the bottom doesn't count
-                         && (int)event.getY() < v.getBottom()) {
+                         /*&& (int)event.getY() > v.getTop()*/) {
                             animateExpand();
                             visibilityChanged(true);
                             v.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
@@ -1593,13 +1604,24 @@ public class TabletStatusBar extends BaseStatusBar implements
                         mVT.addMovement(event);
                         mVT.computeCurrentVelocity(1000); // pixels per second
                         // require a little more oomph once we're already in peekaboo mode
-                        if (!panelShowing && (
-                               (peeking && mVT.getYVelocity() < -mNotificationFlingVelocity*3)
-                            || (mVT.getYVelocity() < -mNotificationFlingVelocity))) {
-                            mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PEEK);
-                            mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PANEL);
-                            mHandler.sendEmptyMessage(MSG_CLOSE_NOTIFICATION_PEEK);
-                            mHandler.sendEmptyMessage(MSG_OPEN_NOTIFICATION_PANEL);
+                        if(isOnTop()) {
+                            if (!panelShowing && (
+                                   (peeking && mVT.getYVelocity() > mNotificationFlingVelocity*3)
+                                || (mVT.getYVelocity() > mNotificationFlingVelocity))) {
+                                mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PEEK);
+                                mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PANEL);
+                                mHandler.sendEmptyMessage(MSG_CLOSE_NOTIFICATION_PEEK);
+                                mHandler.sendEmptyMessage(MSG_OPEN_NOTIFICATION_PANEL);
+                            }
+                        } else {
+                            if (!panelShowing && (
+                                   (peeking && mVT.getYVelocity() < -mNotificationFlingVelocity*3)
+                                || (mVT.getYVelocity() < -mNotificationFlingVelocity))) {
+                                mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PEEK);
+                                mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PANEL);
+                                mHandler.sendEmptyMessage(MSG_CLOSE_NOTIFICATION_PEEK);
+                                mHandler.sendEmptyMessage(MSG_OPEN_NOTIFICATION_PANEL);
+                            }
                         }
                     }
                     return true;
@@ -1612,7 +1634,7 @@ public class TabletStatusBar extends BaseStatusBar implements
                                 && Math.abs(event.getX() - mInitialTouchX) < mTouchSlop
                                 && Math.abs(event.getY() - mInitialTouchY) < (mTouchSlop / 3)
                                 // dragging off the bottom doesn't count
-                                && (int)event.getY() < v.getBottom()) {
+                                /*&& (int)event.getY() < v.getBottom()*/) {
                             Message peekMsg = mHandler.obtainMessage(MSG_OPEN_NOTIFICATION_PEEK);
                             peekMsg.arg1 = mPeekIndex;
                             mHandler.removeMessages(MSG_OPEN_NOTIFICATION_PEEK);

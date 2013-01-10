@@ -71,7 +71,7 @@ public class NotificationPanel extends RelativeLayout implements StatusBarPanel,
     // amount to slide mContentParent down by when mContentFrame is missing
     float mContentFrameMissingTranslation;
 
-    Choreographer mChoreo = new Choreographer();
+    Choreographer mChoreo;
 
     public NotificationPanel(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -79,6 +79,8 @@ public class NotificationPanel extends RelativeLayout implements StatusBarPanel,
 
     public NotificationPanel(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+
+        mChoreo = new Choreographer(context);
     }
 
     public void setBar(TabletStatusBar b) {
@@ -352,9 +354,14 @@ public class NotificationPanel extends RelativeLayout implements StatusBarPanel,
         final static int CLOSE_DURATION = 250;
 
         // the panel will start to appear this many px from the end
-        final int HYPERSPACE_OFFRAMP = 200;
+        int mHyperspaceOfframp = 200;
 
-        Choreographer() {
+        Choreographer(Context context) {
+
+            if (Settings.System.getInt(getContext().getContentResolver(),
+                    Settings.System.STATUS_BAR_TABLET_TOP, 0) == 1) {
+                mHyperspaceOfframp *= -1;
+            }
         }
 
         void createAnimation(boolean appearing) {
@@ -372,10 +379,10 @@ public class NotificationPanel extends RelativeLayout implements StatusBarPanel,
                 if (mNotificationCount == 0) {
                     end += mContentFrameMissingTranslation;
                 }
-                start = HYPERSPACE_OFFRAMP+end;
+                start = mHyperspaceOfframp+end;
             } else {
                 start = y;
-                end = y + HYPERSPACE_OFFRAMP;
+                end = y + mHyperspaceOfframp;
             }
 
             Animator posAnim = ObjectAnimator.ofFloat(mContentParent, "translationY",
