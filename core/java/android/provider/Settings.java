@@ -3096,6 +3096,12 @@ public final class Settings {
         public static final String STATUS_BAR_TABLET_TOP = "status_bar_tablet_top";
 
         /**
+          * Software Keys Visibility
+          * @hide
+          */
+        public static final String SOFT_KEYS_VISIBILITY = "soft_keys_visibility";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *

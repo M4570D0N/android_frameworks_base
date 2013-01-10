@@ -130,6 +130,11 @@ public class TabletStatusBar extends BaseStatusBar implements
     private static final int NOTIFICATION_PRIORITY_MULTIPLIER = 10; // see NotificationManagerService
     private static final int HIDE_ICONS_BELOW_SCORE = Notification.PRIORITY_LOW * NOTIFICATION_PRIORITY_MULTIPLIER;
 
+    // Soft keys visibility values
+    final static int SK_HOME_VALUE = 1;
+    final static int SK_BACK_VALUE = 2;
+    final static int SK_RECENT_VALUE = 4;
+
     // The height of the bar, as definied by the build.  It may be taller if we're plugged
     // into hdmi.
     int mNaturalBarHeight = -1;
@@ -295,6 +300,23 @@ public class TabletStatusBar extends BaseStatusBar implements
         }
     }
 
+    private final class SoftKeysSettingsObserver extends ContentObserver {
+        SoftKeysSettingsObserver(Handler handler) {
+            super(handler);
+        }
+
+        void observe() {
+            ContentResolver resolver = mContext.getContentResolver();
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.SOFT_KEYS_VISIBILITY), false, this);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            setNavigationVisibility(-1);
+        }
+    }
+
     // last theme that was applied in order to detect theme change (as opposed
     // to some other configuration change).
     CustomTheme mCurrentTheme;
@@ -307,6 +329,9 @@ public class TabletStatusBar extends BaseStatusBar implements
         mConfigHandler = new Handler();
         SettingsObserver settingsObserver = new SettingsObserver(mConfigHandler);
         settingsObserver.observe();
+
+        SoftKeysSettingsObserver softKeysSettingsObserver = new SoftKeysSettingsObserver(mConfigHandler);
+        softKeysSettingsObserver.observe();
 
         // Notification Panel
         mNotificationPanel = (NotificationPanel)View.inflate(context,
@@ -791,6 +816,8 @@ public class TabletStatusBar extends BaseStatusBar implements
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         context.registerReceiver(mBroadcastReceiver, filter);
 
+        setNavigationVisibility(-1);
+
         return sb;
     }
 
@@ -1149,13 +1176,23 @@ public class TabletStatusBar extends BaseStatusBar implements
     }
 
     private void setNavigationVisibility(int visibility) {
-        boolean disableHome = ((visibility & StatusBarManager.DISABLE_HOME) != 0);
-        boolean disableRecent = ((visibility & StatusBarManager.DISABLE_RECENT) != 0);
-        boolean disableBack = ((visibility & StatusBarManager.DISABLE_BACK) != 0);
 
-        mBackButton.setVisibility(disableBack ? View.INVISIBLE : View.VISIBLE);
-        mHomeButton.setVisibility(disableHome ? View.INVISIBLE : View.VISIBLE);
-        mRecentButton.setVisibility(disableRecent ? View.INVISIBLE : View.VISIBLE);
+        int settingsVisibility = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.SOFT_KEYS_VISIBILITY, 7);
+
+        boolean disableHome = ((settingsVisibility & SK_HOME_VALUE) == 0);
+        boolean disableRecent = ((settingsVisibility & SK_RECENT_VALUE) == 0);
+        boolean disableBack = ((settingsVisibility & SK_BACK_VALUE) == 0);
+
+        if (visibility != -1) {
+            disableHome |= ((visibility & StatusBarManager.DISABLE_HOME) != 0);
+            disableRecent |= ((visibility & StatusBarManager.DISABLE_RECENT) != 0);
+            disableBack |= ((visibility & StatusBarManager.DISABLE_BACK) != 0);
+        }
+
+        mBackButton.setVisibility(disableBack ? View.GONE : View.VISIBLE);
+        mHomeButton.setVisibility(disableHome ? View.GONE : View.VISIBLE);
+        mRecentButton.setVisibility(disableRecent ? View.GONE : View.VISIBLE);
 
         mInputMethodSwitchButton.setScreenLocked(
                 (visibility & StatusBarManager.DISABLE_SYSTEM_INFO) != 0);
