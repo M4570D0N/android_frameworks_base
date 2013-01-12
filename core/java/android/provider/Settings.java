@@ -3114,6 +3114,14 @@ public final class Settings {
         public static final String SCREENSHOT_DELAY = "screenshot_delay";
 
         /**
+          * Policy for status bar 2G/3G toggle
+          * 0 = Phone.NT_MODE_WCDMA_PREF
+          * 2 = Phone.NT_MODE_WCDMA_ONLY
+          * @hide
+          */
+        public static final String STATUS_BAR_TOGGLES_2G3G_POLICY = "status_bar_toggles_2g3g_policy";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *

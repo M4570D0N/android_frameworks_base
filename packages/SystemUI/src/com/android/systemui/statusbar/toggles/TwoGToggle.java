@@ -24,6 +24,7 @@ import android.os.Handler;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import com.android.internal.telephony.Phone;
 import com.android.systemui.R;
@@ -42,12 +43,20 @@ public class TwoGToggle extends Toggle {
         obs.observe();
         setLabel(R.string.toggle_2g);
         updateState();
+
+        WcdmaPolicyObserver wpObs = new WcdmaPolicyObserver(new Handler());
+        wpObs.observe();
     }
 
     @Override
     public void onCheckChanged(boolean checked) {
-        int networkType = checked ? Phone.NT_MODE_GSM_ONLY : Phone.NT_MODE_WCDMA_PREF;
+        int wcdmaPolicy = Settings.System.getInt(mContext.getContentResolver(),
+                            Settings.System.STATUS_BAR_TOGGLES_2G3G_POLICY, Phone.NT_MODE_WCDMA_PREF);
+
+        int networkType = checked ? Phone.NT_MODE_GSM_ONLY : wcdmaPolicy;
         Settings.Secure.putInt(mContext.getContentResolver(), Settings.Secure.PREFERRED_NETWORK_MODE, networkType);
+
+        Log.d("2GToggle", "Setting network type: " + networkType);
 
         Intent intent = new Intent(ACTION_MODIFY_NETWORK_MODE);
         intent.putExtra(EXTRA_NETWORK_MODE, networkType);
@@ -71,6 +80,25 @@ public class TwoGToggle extends Toggle {
         public void onChange(boolean selfChange) {
             mNetworkMode = getCurrentPreferredNetworkMode(mContext);
             updateState();
+        }
+    }
+
+    class WcdmaPolicyObserver extends ContentObserver {
+        WcdmaPolicyObserver(Handler handler) {
+            super(handler);
+        }
+
+        void observe() {
+            ContentResolver resolver = mContext.getContentResolver();
+            resolver.registerContentObserver(Settings.System
+                    .getUriFor(Settings.System.STATUS_BAR_TOGGLES_2G3G_POLICY), false,
+                    this);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            if(!mToggle.isChecked())
+                onCheckChanged(false);
         }
     }
 
