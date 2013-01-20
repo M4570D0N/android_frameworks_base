@@ -3122,16 +3122,14 @@ public final class Settings {
         public static final String STATUS_BAR_TOGGLES_2G3G_POLICY = "status_bar_toggles_2g3g_policy";
 
         /**
-          * Enable/disable low battery warning
+          * Low battery warning dialog and sound
+          * 0 = off
+          * 1 = dialog only
+          * 2 = sound only
+          * 3 = dialog and sound
           * @hide
           */
-        public static final String POWER_UI_LOW_BATTERY_WARNING = "power_ui_low_battery_warning";
-
-        /**
-          * Enable/disable low battery sound
-          * @hide
-          */
-        public static final String POWER_UI_LOW_BATTERY_SOUND = "power_ui_low_battery_sound";
+        public static final String POWER_UI_LOW_BATTERY_WARNING_POLICY = "power_ui_low_battery_warning_policy";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
