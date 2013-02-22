@@ -300,6 +300,10 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mTorchCallback;
     private State mTorchState = new State();
 
+    private QuickSettingsTileView mQuickRecordTile;
+    private RefreshCallback mQuickRecordCallback;
+    private State mQuickRecordState = new State();
+
     private QuickSettingsTileView mWifiTetherTile;
     private RefreshCallback mWifiTetherCallback;
     private State mWifiTetherState = new State();
@@ -311,6 +315,10 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private QuickSettingsTileView mQuietHoursTile;
     private RefreshCallback mQuietHoursCallback;
     private State mQuietHoursState = new State();
+
+    private QuickSettingsTileView mRootBoxTile;
+    private RefreshCallback mRootBoxCallback;
+    private State mRootBoxState = new State();
 
     private QuickSettingsTileView mProfileTile;
     private RefreshCallback mProfileCallback;
@@ -419,10 +427,12 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                 refreshLTETile();
             if (toggle.equals(QuickSettings.POWER_MENU_TOGGLE))
                 refreshPowerMenuTile();
+            if (toggle.equals(QuickSettings.ROOTBOX_TOGGLE))
+                refreshRootBoxTile();
             if (toggle.equals(QuickSettings.QUIETHOURS_TOGGLE))
                 refreshQuietHoursTile();
             if (toggle.equals(QuickSettings.PROFILE_TOGGLE))
-                refreshPowerMenuTile();
+                refreshProfileTile();
             if (toggle.equals(QuickSettings.STATUSBAR_TOGGLE))
                 refreshStatusBarTile();
             if (toggle.equals(QuickSettings.NAVBAR_HIDE_TOGGLE))
@@ -783,8 +793,8 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         onQuietHoursChanged();
     }
 
-    void onQuietHoursChanged() {
-        boolean enabled = Settings.System.getBoolean(mContext.getContentResolver(), Settings.System.QUIET_HOURS_ENABLED, false);
+    public void onQuietHoursChanged() {
+        boolean enabled = Settings.System.getInt(mContext.getContentResolver(), Settings.System.QUIET_HOURS_ENABLED, 0) == 1;
         mQuietHoursState.enabled = enabled;
         mQuietHoursState.iconId = enabled
                 ? R.drawable.ic_qs_quiet_hours_on
@@ -802,6 +812,20 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         if (mQuietHoursTile != null) {
             onQuietHoursChanged();
         }
+    }
+
+    // RootBox
+    void addRootBoxTile(QuickSettingsTileView view, RefreshCallback cb) {
+        mRootBoxTile = view;
+        mRootBoxCallback = cb;
+        refreshRootBoxTile();
+    }
+
+    void refreshRootBoxTile() {
+        Resources r = mContext.getResources();
+        mRootBoxState.label = r.getString(R.string.quick_settings_rootbox);
+        mRootBoxState.iconId = (mUseDefaultTheme ? R.drawable.ic_qs_rb : R.drawable.ic_qs_rb);
+        mRootBoxCallback.refreshView(mRootBoxTile, mRootBoxState);
     }
 
 
@@ -1056,7 +1080,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                 case AudioManager.RINGER_MODE_NORMAL:
                 default:
                     enabled = false;
-                    iconId = R.drawable.ic_qs_sound_off;
+                    iconId = (mUseDefaultTheme ? R.drawable.ic_qs_sound_off : R.drawable.ic_qs_sound_off_light);
                     label = R.string.quick_settings_sound_on;
                     break;
                 case AudioManager.RINGER_MODE_VIBRATE:
@@ -1331,6 +1355,21 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         }
     }
 
+    // Quick Record
+    void addQuickRecordTile(QuickSettingsTileView view, RefreshCallback cb) {
+        mQuickRecordTile = view;
+        mQuickRecordCallback = cb;
+        mQuickRecordCallback.refreshView(mQuickRecordTile, mQuickRecordState);
+    }
+
+    void setQuickRecordTileInfo(String playStateName, Integer playStateIcon) {
+        if (mQuickRecordCallback != null) {
+            mQuickRecordState.label = playStateName;
+            mQuickRecordState.iconId = playStateIcon;
+            mQuickRecordCallback.refreshView(mQuickRecordTile, mQuickRecordState);
+        }
+    }
+
     // NavBar Hide
     void addNavBarHideTile(QuickSettingsTileView view, RefreshCallback cb) {
         mNavBarHideTile = view;
@@ -1343,7 +1382,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         mNavBarHideState.enabled = enabled;
         mNavBarHideState.iconId = enabled
                 ? R.drawable.ic_qs_navbar_hide_on
-                : R.drawable.ic_qs_navbar_hide_off;
+                : (mUseDefaultTheme ? R.drawable.ic_qs_navbar_hide_off : R.drawable.ic_qs_navbar_hide_off_light);
         mNavBarHideState.label = enabled
                 ? mContext.getString(R.string.quick_settings_navbar_hide_on_label)
                 : mContext.getString(R.string.quick_settings_navbar_hide_off_label);
