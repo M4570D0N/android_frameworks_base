@@ -68,6 +68,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 class QuickSettingsModel implements BluetoothStateChangeCallback,
@@ -205,8 +206,11 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private final NextAlarmObserver mNextAlarmObserver;
     private final BugreportObserver mBugreportObserver;
     private final BrightnessObserver mBrightnessObserver;
+    private Calendar mCalendar;
     private NfcAdapter mNfcAdapter;
     private boolean mUseDefaultTheme = true;
+
+    private boolean sundayToggle = false;
 
     private QuickSettingsTileView mUserTile;
     private RefreshCallback mUserCallback;
@@ -296,6 +300,10 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mSyncCallback;
     private State mSyncState = new State();
 
+    private QuickSettingsTileView mSwaggerTile;
+    private RefreshCallback mSwaggerCallback;
+    private State mSwaggerState = new State();
+
     private QuickSettingsTileView mTorchTile;
     private RefreshCallback mTorchCallback;
     private State mTorchState = new State();
@@ -373,6 +381,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         context.registerReceiver(mAlarmIntentReceiver, alarmIntentFilter);
 
         IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_TIME_TICK);
         filter.addAction(NfcAdapter.ACTION_ADAPTER_STATE_CHANGED);
         context.registerReceiver(mBroadcastReceiver, filter);
     }
@@ -385,9 +394,21 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                     mNfcAdapter = NfcAdapter.getDefaultAdapter(context);
                 }
                 refreshNFCTile();
+            } else if (Intent.ACTION_TIME_TICK.equals(intent.getAction())) {
+                updateClock();
             }
         }
     };
+
+    final void updateClock() {
+        mCalendar = Calendar.getInstance();
+        if (mCalendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+            sundayToggle = true;
+        } else {
+            sundayToggle = false;
+        }
+        refreshSwaggerTile();
+    }
 
     void updateResources(ArrayList<String> toggles) {
         for (String toggle : toggles) {
@@ -411,6 +432,8 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                 refreshNFCTile();
             if (toggle.equals(QuickSettings.SYNC_TOGGLE))
                 refreshSyncTile();
+            if (toggle.equals(QuickSettings.SWAGGER_TOGGLE))
+                refreshSwaggerTile();
             if (toggle.equals(QuickSettings.TORCH_TOGGLE))
                 refreshTorchTile();
             if (toggle.equals(QuickSettings.WIFI_TETHER_TOGGLE))
@@ -761,9 +784,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     @Override
     public void onLocationGpsStateChanged(boolean inUse, boolean hasFix, String description) {
         mLocationState.enabled = inUse;
-        mLocationState.iconId = inUse
-                ? R.drawable.ic_qs_gps_on
-                : (mUseDefaultTheme ? R.drawable.ic_qs_gps_off : R.drawable.ic_qs_gps_off_light);
+        mLocationState.iconId = 0; // let refreshView decide what icon to use when there is no fix
         if (hasFix) {
             mLocationState.iconId = R.drawable.ic_qs_gps_locked;
         }
@@ -833,14 +854,23 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     void addProfileTile(QuickSettingsTileView view, RefreshCallback cb) {
         mProfileTile = view;
         mProfileCallback = cb;
-        refreshProfileTile();
+        onProfileChanged();
     }
 
-    void refreshProfileTile() {
-        Resources r = mContext.getResources();
+    public void onProfileChanged() {
         mProfileState.label = mProfileManager.getActiveProfile().getName();
         mProfileState.iconId = (mUseDefaultTheme ? R.drawable.ic_qs_profiles : R.drawable.ic_qs_profiles);
         mProfileCallback.refreshView(mProfileTile, mProfileState);
+
+        if (mProfileTile != null && mProfileCallback != null) {
+            mProfileCallback.refreshView(mProfileTile, mProfileState);
+        }
+    }
+
+    void refreshProfileTile() {
+        if (mProfileTile != null) {
+            onProfileChanged();
+        }
     }
 
     // Bug report
@@ -1080,17 +1110,17 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                 case AudioManager.RINGER_MODE_NORMAL:
                 default:
                     enabled = false;
-                    iconId = (mUseDefaultTheme ? R.drawable.ic_qs_sound_off : R.drawable.ic_qs_sound_off_light);
+                    iconId = (mUseDefaultTheme ? R.drawable.ic_qs_ringtoggle_sound : R.drawable.ic_qs_ringtoggle_sound_light);
                     label = R.string.quick_settings_sound_on;
                     break;
                 case AudioManager.RINGER_MODE_VIBRATE:
                     enabled = true;
-                    iconId = R.drawable.ic_qs_vibrate_on;
+                    iconId = (mUseDefaultTheme ? R.drawable.ic_qs_ringtoggle_vibrate : R.drawable.ic_qs_ringtoggle_vibrate_light);
                     label = R.string.quick_settings_vibrate_on_label;
                     break;
                 case AudioManager.RINGER_MODE_SILENT:
                     enabled = true;
-                    iconId = R.drawable.ic_qs_silence_on;
+                    iconId = (mUseDefaultTheme ? R.drawable.ic_qs_ringtoggle_silent : R.drawable.ic_qs_ringtoggle_silent_light);
                     label = R.string.quick_settings_silent_on_label;
                     break;
             }
@@ -1152,6 +1182,36 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     void refreshSyncTile() {
         if (mSyncTile != null) {
             onSyncChanged();
+        }
+    }
+
+    // Swagger
+    void addSwaggerTile(QuickSettingsTileView view, RefreshCallback cb) {
+        mSwaggerTile = view;
+        mSwaggerCallback = cb;
+        onSwaggerChanged();
+    }
+
+    void onSwaggerChanged() {
+        Resources r = mContext.getResources();
+        if (sundayToggle) {
+            mSwaggerState.label = r.getString(R.string.quick_settings_swaggersun);
+            mSwaggerState.iconId = R.drawable.ic_qs_swaggersun;
+            mSwaggerCallback.refreshView(mSwaggerTile, mSwaggerState);
+        } else {
+            mSwaggerState.label = r.getString(R.string.quick_settings_swagger);
+            mSwaggerState.iconId = R.drawable.ic_qs_swagger;
+            mSwaggerCallback.refreshView(mSwaggerTile, mSwaggerState);
+        }
+
+        if (mSwaggerTile != null) {
+            mSwaggerCallback.refreshView(mSwaggerTile, mSwaggerState);
+        }
+    }
+
+    void refreshSwaggerTile() {
+        if (mSwaggerTile != null) {
+            onSwaggerChanged();
         }
     }
 

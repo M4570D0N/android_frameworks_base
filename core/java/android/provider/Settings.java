@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2006 The Android Open Source Project
+ * Copyright (C) 2012 ParanoidAndroid Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -3422,6 +3423,11 @@ public final class Settings {
          */
         public static final String BUTTON_BACKLIGHT_DISABLE = "button_backlight_disable";
 
+        /**	
+         * Allows to show the background activity back the lockscreen
+         * @hide
+         */
+        public static final String LOCKSCREEN_SEE_THROUGH = "lockscreen_see_through";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
@@ -5308,6 +5314,12 @@ public final class Settings {
          * @hide
          */
         public static final String SCREENSAVER_DEFAULT_COMPONENT = "screensaver_default_component";
+
+        /**
+         * Notifications Expand Behaviour
+         * @hide
+         */
+        public static final String NOTIFICATIONS_BEHAVIOUR = "notifications_behaviour";
 
         /**
          * This are the settings to be backed up.

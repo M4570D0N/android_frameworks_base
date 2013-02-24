@@ -982,7 +982,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 	        if (mGlobalActions == null) {
 	            mGlobalActions = new GlobalActions(mContext, mWindowManagerFuncs);
 	        }
-	        mGlobalActions.createProfileDialog();
+	        mGlobalActions.showProfileDialog();
     }
 
     boolean isDeviceProvisioned() {
@@ -3663,7 +3663,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             if (DEBUG_LAYOUT) Log.i(TAG, "force=" + mForceStatusBar
                     + " forcefkg=" + mForceStatusBarFromKeyguard
                     + " top=" + mTopFullscreenOpaqueWindowState);
-            if (mForceStatusBar || mForceStatusBarFromKeyguard) {
+            if ((mForceStatusBar || mForceStatusBarFromKeyguard) &&
+                    Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.EXPANDED_DESKTOP_STATE, 0) == 0) {
                 if (DEBUG_LAYOUT) Log.v(TAG, "Showing status bar: forced");
                 if (mStatusBar.showLw(true)) changes |= FINISH_LAYOUT_REDO_LAYOUT;
             } else if (mTopFullscreenOpaqueWindowState != null) {
