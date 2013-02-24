@@ -41,7 +41,7 @@ public class BitmapFactory {
          * the same result from the decoder as if null were passed.
          */
         public Options() {
-            inDither = false;
+            inDither = true;
             inScaled = true;
         }
 
